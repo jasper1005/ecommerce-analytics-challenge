@@ -8,5 +8,5 @@ PORT = 5000
 DEBUG = True
 
 # Business Logic Constants
-DUPLICATE_TIME_SECONDS = 5  # Duplicate time threshold in seconds
+DUPLICATE_TIME_SECONDS = 60  # Duplicate time threshold in seconds
 DEFAULT_TIMEZONE = 'UTC'
