@@ -166,7 +166,7 @@ python test_script.py
 - [x] Multiple date formats
 - [x] Invalid dates
 - [x] Duplicate transactions
-- [x] Cross-timezone queries
+- [ ] Cross-timezone queries
 - [ ] Other: ___________
 
 ### Known Issues
