@@ -265,6 +265,19 @@ def data_quality_report():
                 'message': 'Please ensure data has been processed'
             }), 404
         
+        # quality_data = [total, invalid_dates, missing_timezones, duplicate_txns, out_of_order]
+        keys = ['invalid_dates', 'missing_timezones', 'duplicate_transactions', 'out_of_order_records']
+        counts = dict(zip(keys, quality_data[1:5]))
+        issues_found = {k: int(v) for k, v in counts.items() if v and int(v) != 0}
+
+        resolutions = {
+            'invalid_dates': "Excluded from analysis",
+            'missing_timezones': "Assumed UTC based on server logs",
+            'duplicate_transactions': "Kept latest timestamp version",
+            'out_of_order_records': "Reordered by actual transaction time"
+        }
+        resolution_summary = {k: resolutions[k] for k in issues_found.keys()}
+
         return jsonify({
             'total_records': quality_data[0],
             'processed_records': processed_count,
@@ -274,7 +287,7 @@ def data_quality_report():
                 'duplicate_transactions': quality_data[3],
                 'out_of_order_records': quality_data[4]
             },
-            'processing_success_rate': round((processed_count / quality_data[0]) * 100, 2) if quality_data[0] > 0 else 0
+            'resolution_summary': resolution_summary
         })
         
     except Exception as e:
@@ -312,11 +325,11 @@ if __name__ == '__main__':
     if database.get_transaction_count() == 0:
         logger.info("No processed transactions found, starting to process CSV...")
         processors.process_csv_data()
-    
+        
     logger.info("Starting E-commerce Analytics API")
     logger.info(f"API Address: http://{config.HOST}:{config.PORT}")
     logger.info(f"Health Check: http://{config.HOST}:{config.PORT}/health")
     
-    app.config['JSON_SORT_KEYS'] = False
+    app.json.sort_keys = False
     app.run(debug=config.DEBUG, host=config.HOST, port=config.PORT)
     

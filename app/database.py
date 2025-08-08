@@ -34,13 +34,13 @@ def insert_many_transactions(records):
             INSERT INTO transactions (
                 transaction_id, customer_id, amount, currency,
                 original_timestamp, original_timezone, processed_timestamp,
-                processed_timezone, status, product_category, data_quality_flags
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                processed_timezone, status, product_category, data_quality_flags, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             record['transaction_id'], record['customer_id'], record['amount'],
             record['currency'], record['original_timestamp'], record['original_timezone'],
             record['processed_timestamp'], record['processed_timezone'],
-            record['status'], record['product_category'], record['data_quality_flags']
+            record['status'], record['product_category'], record['data_quality_flags'],record['created_at']
         ))
     
     conn.commit()

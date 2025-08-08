@@ -28,9 +28,9 @@ def validate_timezone(tz_str):
 
 def safe_string(value):
     """Safe String Conversion"""
+    #  Check if the value is None or NaN
     if pd.isna(value) or value is None:
         return ''
-    return str(value).strip()
 
 # ---------------- Time Processing ----------------
 def parse_timestamp(timestamp_str, timezone_str=None):
@@ -38,10 +38,13 @@ def parse_timestamp(timestamp_str, timezone_str=None):
     Analyze the timestamp (UTC time, list of issues)
     """
     issues = []
-    
     timestamp_str = safe_string(timestamp_str)
     timezone_str = safe_string(timezone_str)
     
+    # Assuming UTC if no timezone is provided
+    if not timezone_str:
+        issues.append('missing_timezone')
+
     if not timestamp_str:
         return None, ['empty_timestamp']
     
@@ -74,10 +77,6 @@ def parse_timestamp(timestamp_str, timezone_str=None):
                 
             except pytz.exceptions.UnknownTimeZoneError:
                 issues.append('invalid_timezone')
-        
-        # Assuming UTC if no timezone is provided
-        if not timezone_str:
-            issues.append('missing_timezone')
         
         utc_dt = pytz.UTC.localize(dt) if dt.tzinfo is None else dt.astimezone(pytz.UTC)
         return utc_dt, issues
@@ -129,7 +128,6 @@ def is_duplicate(new_record, existing_records, new_dt):
 def process_csv_data():
     """Processing CSV Data"""
     print("Start processing CSV Data...")
-    
     if not os.path.exists(CSV_PATH):
         print(f"CSV file not found: {CSV_PATH}")
         return
@@ -146,7 +144,7 @@ def process_csv_data():
         'total_processed': 0,
         'invalid_dates': 0,
         'missing_timezones': 0,
-        'duplicate_transactions': 0
+        'duplicate_transactions': 0,
     }
     
     processed_records = []
@@ -165,7 +163,6 @@ def process_csv_data():
         if 'invalid_date_format' in issues:
             stats['invalid_dates'] += 1
             continue
-        
         if 'missing_timezone' in issues:
             stats['missing_timezones'] += 1
         
@@ -181,7 +178,8 @@ def process_csv_data():
             'processed_timezone': 'UTC',
             'status': str(row['status']),
             'product_category': str(row['product_category']),
-            'data_quality_flags': json.dumps({'issues': issues})
+            'data_quality_flags': json.dumps({'issues': issues}),
+            'created_at': datetime.utcnow().isoformat() + 'Z'
         }
         
         # Checking for duplicates
@@ -190,14 +188,13 @@ def process_csv_data():
             continue
         
         processed_records.append(record)
-    
     # Inserting processed records into the database
     database.insert_many_transactions(processed_records)
     
     # Updating data quality summary
     database.update_quality_summary(stats)
     
-    print(f"   Process Completed：{len(processed_records)} rows of vaild transactions")
-    print(f"   Skip Invaild Date：{stats['invalid_dates']} rows")
-    print(f"   Skip Duplicated Records：{stats['duplicate_transactions']} rows")
-    print(f"   Missing Timezone：{stats['missing_timezones']} rows")
+    print(f"Process Completed：{len(processed_records)} rows of vaild transactions")
+    print(f"Skip Invaild Date：{stats['invalid_dates']} rows")
+    print(f"Skip Duplicated Records：{stats['duplicate_transactions']} rows")
+    print(f"Missing Timezone：{stats['missing_timezones']} rows")
