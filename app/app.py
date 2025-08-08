@@ -32,19 +32,25 @@ def daily_sales():
         if not start_date or not end_date:
             return jsonify({
                 'error': 'Missing parameters',
-                'message': 'Required start_date and end_date ( In YYYY-MM-DD format)'
+                'message': 'Required start_date and end_date ( In YYYY-MM-DD format)',
+                'code': 400,
+                'timestamp':datetime.utcnow().isoformat() + 'Z'
             }), 400
         
         if not processors.validate_date(start_date) or not processors.validate_date(end_date):
             return jsonify({
-                'error': 'Date format error',
-                'message': 'Date must be in YYYY-MM-DD format'
+                'error': 'Invalid date format',
+                'message': 'start_date must be in YYYY-MM-DD format',
+                'code': 400,
+                'timestamp':datetime.utcnow().isoformat() + 'Z'
             }), 400
         
         if not processors.validate_timezone(timezone_str):
             return jsonify({
                 'error': 'Timezone invalid',
-                'message': 'Please provide a valid timezone name'
+                'message': 'Please provide a valid timezone name',
+                'code': 400,
+                'timestamp':datetime.utcnow().isoformat() + 'Z'
             }), 400
         
         # Querying the database
@@ -119,7 +125,9 @@ def hourly_sales():
         if not date_str:
             return jsonify({
                 'error': 'Missing Parameters',
-                'message': 'Required date parameter (YYYY-MM-DD Format)'
+                'message': 'Required date parameter (YYYY-MM-DD Format)',
+                'code': 400,
+                'timestamp':datetime.utcnow().isoformat() + 'Z'
             }), 400
         
         if not processors.validate_date(date_str) or not processors.validate_timezone(timezone_str):
@@ -325,7 +333,7 @@ if __name__ == '__main__':
     if database.get_transaction_count() == 0:
         logger.info("No processed transactions found, starting to process CSV...")
         processors.process_csv_data()
-        
+
     logger.info("Starting E-commerce Analytics API")
     logger.info(f"API Address: http://{config.HOST}:{config.PORT}")
     logger.info(f"Health Check: http://{config.HOST}:{config.PORT}/health")

@@ -31,9 +31,10 @@ def safe_string(value):
     #  Check if the value is None or NaN
     if pd.isna(value) or value is None:
         return ''
+    return str(value).strip()  
 
 # ---------------- Time Processing ----------------
-def parse_timestamp(timestamp_str, timezone_str=None):
+def parse_timestamp(timestamp_str, timezone_str=None, dst_check=False):
     """
     Analyze the timestamp (UTC time, list of issues)
     """
@@ -61,17 +62,12 @@ def parse_timestamp(timestamp_str, timezone_str=None):
         if timezone_str:
             try:
                 tz = pytz.timezone(timezone_str)
-                if tz.zone != 'UTC':
-                    try:
-                        dt_localized = tz.localize(dt)
-                    except pytz.AmbiguousTimeError:
-                        dt_localized = tz.localize(dt, is_dst=True)
-                        issues.append('ambiguous_dst_time')
-                    except pytz.NonExistentTimeError:
-                        dt_localized = tz.localize(dt + timedelta(hours=1))
-                        issues.append('nonexistent_dst_time')
-                else:
+                try:
+                    dt_localized = tz.localize(dt,is_dst=None)
+                except pytz.exceptions.NonExistentTimeError:
                     dt_localized = tz.localize(dt)
+                except pytz.exceptions.AmbiguousTimeError:
+                    dt_localized = tz.localize(dt, is_dst=dst_check)
                 
                 return dt_localized.astimezone(pytz.UTC), issues
                 
@@ -152,11 +148,17 @@ def process_csv_data():
     # Handling each row in the DataFrame
     for _, row in df.iterrows():
         stats['total_processed'] += 1
-        
+        dst_check = False
+
+        # Validating required fields
+        if 'dst' in row['transaction_id'].lower():
+            dst_check = True
+
         # Analyze timestamp
         parsed_dt, issues = parse_timestamp(
             row['timestamp'], 
-            row.get('timezone', '')
+            row.get('timezone', ''),
+            dst_check
         )
         
         # Skip invalid records
